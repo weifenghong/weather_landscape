@@ -157,18 +157,31 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
                     updateImage();
     
                     // 检查浏览器是否支持全屏API
-                    function goFullScreen() {{
+                    function toggleFullScreen() {{
                         var element = document.documentElement; // 获取根元素（通常是 <html>）
-    
-                        // 检查浏览器的全屏API支持
-                        if (element.requestFullscreen) {{
-                            element.requestFullscreen(); // 大多数浏览器
-                        }} else if (element.mozRequestFullScreen) {{ // Firefox
-                            element.mozRequestFullScreen();
-                        }} else if (element.webkitRequestFullscreen) {{ // Chrome, Safari 和 Opera
-                            element.webkitRequestFullscreen();
-                        }} else if (element.msRequestFullscreen) {{ // IE/Edge
-                            element.msRequestFullscreen();
+                    
+                        // 如果当前是全屏状态，则退出全屏
+                        if (document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {{
+                            if (document.exitFullscreen) {{
+                                document.exitFullscreen(); // 大多数浏览器
+                            }} else if (document.mozCancelFullScreen) {{ // Firefox
+                                document.mozCancelFullScreen();
+                            }} else if (document.webkitExitFullscreen) {{ // Chrome, Safari 和 Opera
+                                document.webkitExitFullscreen();
+                            }} else if (document.msExitFullscreen) {{ // IE/Edge
+                                document.msExitFullscreen();
+                            }}
+                        }} else {{
+                            // 否则进入全屏
+                            if (element.requestFullscreen) {{
+                                element.requestFullscreen(); // 大多数浏览器
+                            }} else if (element.mozRequestFullScreen) {{ // Firefox
+                                element.mozRequestFullScreen();
+                            }} else if (element.webkitRequestFullscreen) {{ // Chrome, Safari 和 Opera
+                                element.webkitRequestFullscreen();
+                            }} else if (element.msRequestFullscreen) {{ // IE/Edge
+                                element.msRequestFullscreen();
+                            }}
                         }}
                     }}
 
@@ -185,7 +198,7 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
     
                     // 页面加载时调用全屏函数
                     window.onload = function() {{
-                        document.body.addEventListener('click', goFullScreen); // Trigger on click
+                        document.body.addEventListener('click', toggleFullScreen); // Trigger on click
                     }};
                 </script>
             </body>
