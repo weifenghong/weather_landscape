@@ -37,29 +37,41 @@ class Sprites():
         self.pix[x,y] = color
         
 
-    def Draw(self,name,index,xpos,ypos):
-
-        #print("DRAW '%s' #%i at %i,%i" % (name,index,xpos,ypos))
+    def Draw(self, name, index, xpos, ypos):
+        # print("DRAW '%s' #%i at %i,%i" % (name, index, xpos, ypos))
     
         imagefilename = "%s_%02i%s" % (name, index, self.ext)
-        imagepath = os.path.join(self.dir,imagefilename) 
+        imagepath = os.path.join(self.dir, imagefilename)
         img = Image.open(imagepath)
         w, h = img.size
         pix = img.load()
+    
         ypos -= h
         for x in range(w):
             for y in range(h):
-                if (xpos+x>=self.w) or (xpos+x<0):
+                # if (name == 'bike'):
+                #     print("BIKE",pix[x, y])
+                # Check if the pixel is within bounds
+                if (xpos + x >= self.w) or (xpos + x < 0):
                     continue
-                if (ypos+y>=self.h) or (ypos+y<0):
+                if (ypos + y >= self.h) or (ypos + y < 0):
                     continue
-                if (pix[x,y]==self.BLACK):
-                    self.Dot(xpos+x,ypos+y,self.Black)
-                elif (pix[x,y]==self.WHITE):
-                    self.Dot(xpos+x,ypos+y,self.White)
-                elif (pix[x,y]==self.RED):
-                    self.Dot(xpos+x,ypos+y,self.Black)
-
+    
+                # Get the pixel color (assumed to be in RGB)
+                pixel = pix[x, y]
+    
+                # Handle known colors
+                if pixel == self.BLACK or pixel == (0, 0, 0):
+                    self.Dot(xpos + x, ypos + y, self.Black)
+                elif pixel == self.WHITE or pixel == (255, 255, 255):
+                    self.Dot(xpos + x, ypos + y, self.White)
+                elif pixel == self.RED or pixel == (255, 0, 0):
+                    self.Dot(xpos + x, ypos + y, self.Black)  # Or whatever color you prefer
+                elif pixel == (255, 0, 255):  # Handle purple (magenta)
+                    self.Dot(xpos + x, ypos + y, self.White)  # Or your preferred color
+                elif pixel == ((0, 0, 0, 255)):  # Handle purple (magenta)
+                    self.Dot(xpos + x, ypos + y, self.Black)  # Or your preferred color  
+    
         return w
 
 

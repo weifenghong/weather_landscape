@@ -80,7 +80,8 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
             <html lang="en">
             <head>
                 <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+                <meta name="apple-mobile-web-app-capable" content="yes" />
                 <title>Weather as Landscape</title>
                 <style>
                     body {{
@@ -91,12 +92,12 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
                         height: 100vh;
                         width: 100vw;
                         overflow: hidden;
-                        background-color: #f0f0f0;
+                        background-color: #ffffff;
                     }}
                     img {{
                         width: 100%;
                         height: 100%;
-                        object-fit: fill;
+                        object-fit: contain;
                     }}
                 </style>
             </head>
@@ -104,41 +105,37 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
                 <img id="weatherImage" src="{user_file}?timestamp={timestamp}" alt="Weather">
                 <script>
                     let wakeLock = null;
-
+    
                     async function requestWakeLock() {{
-                        // 检查 Wake Lock API 是否可用
                         if ('wakeLock' in navigator) {{
                             try {{
-                                // 请求屏幕唤醒锁
                                 wakeLock = await navigator.wakeLock.request('screen');
                                 console.log("Wake lock acquired");
-                    
-                                // 监听唤醒锁状态丢失事件
+    
                                 wakeLock.addEventListener('release', () => {{
                                     console.log("Wake lock released");
-                                    wakeLock = null; // 确保状态被清理
+                                    wakeLock = null;
                                 }});
                             }} catch (err) {{
-                                keepScreenActiveFallback()
+                                keepScreenActiveFallback();
                                 console.error(`Wake lock failed: ${{err.name}}`);
                             }}
                         }} else {{
-                            keepScreenActiveFallback()
+                            keepScreenActiveFallback();
                             console.warn("Wake Lock API is not supported in this browser");
                         }}
                     }}
                     requestWakeLock();
-
-                    // 释放唤醒锁
+    
                     function releaseWakeLock() {{
                         if (wakeLock !== null) {{
                             wakeLock.release().then(() => {{
                                 console.log("Wake lock manually released");
-                                wakeLock = null; // 清理状态
+                                wakeLock = null;
                             }});
                         }}
                     }}
-
+    
                     function keepScreenActiveFallback() {{
                         const video = document.createElement('video');
                         video.src = 'data:video/mp4,';
@@ -147,58 +144,55 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
                         video.play();
                         console.log('Fallback: Using video to keep the screen active');
                     }}
-
+    
                     function updateImage() {{
                         var weatherImage = document.getElementById("weatherImage");
                         var timestamp = new Date().getTime();
                         weatherImage.src = "{user_file}?timestamp=" + timestamp;
-                        setTimeout(updateImage, 60000); // Refresh every 60 seconds
+                        setTimeout(updateImage, 60000);
                     }}
                     updateImage();
     
-                    // 检查浏览器是否支持全屏API
                     function toggleFullScreen() {{
-                        var element = document.documentElement; // 获取根元素（通常是 <html>）
-                    
-                        // 如果当前是全屏状态，则退出全屏
-                        if (document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {{
+                        var element = document.documentElement;
+    
+                        // iOS-specific full screen handling
+                        if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {{
+                            const body = document.body;
+                            body.style.height = '100%';
+                            body.style.width = '100%';
+                            body.style.overflow = 'hidden';
+                            body.style.position = 'fixed';
+                            console.log('iOS: Adjusted for full screen experience');
+                        }}
+    
+                        if (document.fullscreenElement || document.webkitFullscreenElement) {{
                             if (document.exitFullscreen) {{
-                                document.exitFullscreen(); // 大多数浏览器
-                            }} else if (document.mozCancelFullScreen) {{ // Firefox
-                                document.mozCancelFullScreen();
-                            }} else if (document.webkitExitFullscreen) {{ // Chrome, Safari 和 Opera
+                                document.exitFullscreen();
+                            }} else if (document.webkitExitFullscreen) {{
                                 document.webkitExitFullscreen();
-                            }} else if (document.msExitFullscreen) {{ // IE/Edge
-                                document.msExitFullscreen();
                             }}
                         }} else {{
-                            // 否则进入全屏
                             if (element.requestFullscreen) {{
-                                element.requestFullscreen(); // 大多数浏览器
-                            }} else if (element.mozRequestFullScreen) {{ // Firefox
-                                element.mozRequestFullScreen();
-                            }} else if (element.webkitRequestFullscreen) {{ // Chrome, Safari 和 Opera
+                                element.requestFullscreen();
+                            }} else if (element.webkitRequestFullscreen) {{
                                 element.webkitRequestFullscreen();
-                            }} else if (element.msRequestFullscreen) {{ // IE/Edge
-                                element.msRequestFullscreen();
                             }}
                         }}
                     }}
-
-                    // 监听页面可见性变化
+    
                     document.addEventListener('visibilitychange', () => {{
                         if (document.visibilityState === 'visible') {{
                             console.log("Page is visible, requesting wake lock again...");
-                            requestWakeLock(); // 页面重新可见时重新申请
+                            requestWakeLock();
                         }} else {{
                             console.log("Page is hidden, releasing wake lock...");
-                            releaseWakeLock(); // 页面不可见时释放唤醒锁
+                            releaseWakeLock();
                         }}
                     }});
     
-                    // 页面加载时调用全屏函数
                     window.onload = function() {{
-                        document.body.addEventListener('click', toggleFullScreen); // Trigger on click
+                        document.body.addEventListener('click', toggleFullScreen);
                     }};
                 </script>
             </body>
