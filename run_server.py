@@ -16,6 +16,7 @@ USERFILENAME = "test1.bmp"
 FAVICON = "favicon.ico"
 
 FILETOOOLD_SEC = 60 * 15  # 每 15 分钟刷新一次（以秒为单位）
+HTML_UPDATE_INTERVAL = 60  # 每 60 秒刷新一次 HTML 页面
 
 WEATHER = WeatherLandscape()
 
@@ -92,7 +93,7 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
                         height: 100vh;
                         width: 100vw;
                         overflow: hidden;
-                        background-color: #ffffff;
+                        background-color: rgb(190, 200, 207);
                     }}
                     img {{
                         width: 100%;
@@ -149,7 +150,7 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
                         var weatherImage = document.getElementById("weatherImage");
                         var timestamp = new Date().getTime();
                         weatherImage.src = "{user_file}?timestamp=" + timestamp;
-                        setTimeout(updateImage, 60000);
+                        setTimeout(updateImage, {update_time} * 1000);
                     }}
                     updateImage();
     
@@ -197,36 +198,90 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
                 </script>
             </body>
             </html>
-        """.format(user_file=USERFILENAME, timestamp=str(time.time()))
+        """.format(user_file=USERFILENAME, update_time=HTML_UPDATE_INTERVAL, timestamp=str(time.time()))
 
 def periodic_refresh():
     """
-    定期刷新天气图像
+    定期刷新天气图像，同时将背景色修改为 #F0F0F0，并打印调试信息
     """
     while True:
         try:
-            print("Checking if weather images need to be updated...")
+            print("[INFO] Checking if weather images need to be updated...")
             user_file_name = WEATHER.TmpFilePath(USERFILENAME)
             eink_file_name = WEATHER.TmpFilePath(EINKFILENAME)
 
             # 检查文件是否过期
             if not os.path.isfile(user_file_name) or not os.path.isfile(eink_file_name) or \
                     (time.time() - os.path.getmtime(user_file_name)) > FILETOOOLD_SEC:
-                print("Refreshing weather images...")
+                print("[INFO] Weather images are outdated or missing. Refreshing...")
+
+                # 调用 MakeImage 方法生成原始天气图像
                 img = WEATHER.MakeImage()
-                img.save(user_file_name)
+                print(f"[DEBUG] Original Image Info:")
+                print(f"- Size: {img.size}")
+                print(f"- Mode: {img.mode}")
 
-                img = img.rotate(-90, expand=True)
-                img = img.transpose(Image.FLIP_TOP_BOTTOM)
+                # 如果图像模式是 '1'，将其转换为 RGBA 模式
+                if img.mode == '1':
+                    img = img.convert('RGBA')
+                    print("[INFO] Converted image to RGBA mode.")
 
-                img.save(eink_file_name)
-                print("Weather images updated.")
+                # 创建背景为 #F0F0F0 (240, 240, 240) 的新图像，并填充背景色 216, 216, 205 190, 200, 207
+                bg_color = (190, 200, 207)  # 背景颜色
+                bg_image = Image.new("RGBA", img.size, bg_color + (255,))  # 背景带不透明度
+
+                # 确保背景颜色正确应用
+                print(f"[DEBUG] Background image created with color: {bg_color}")
+
+                # 获取原图数据并逐像素检查透明区域
+                img_data = img.getdata()
+                new_img_data = []
+
+                # 遍历原图数据，替换白色像素为背景色
+                for i, pixel in enumerate(img_data):
+                    # 如果是白色像素，替换为背景色
+                    if pixel == (255, 255, 255, 255):  # 白色像素
+                        new_img_data.append(bg_color + (255,))
+                    else:
+                        new_img_data.append(pixel)
+
+                # 更新图像数据
+                img.putdata(new_img_data)
+
+                # 将处理后的图像粘贴到背景上
+                bg_image.paste(img, (0, 0), img)
+
+                # 检查粘贴后的图像左上角像素
+                top_left_pixel_after_paste = bg_image.getpixel((0, 0))
+                print(f"[DEBUG] Top-left Pixel Color (After paste) (RGB): {top_left_pixel_after_paste} (Expected: {bg_color})")
+
+                # 转换为 RGB 模式（去除透明度）
+                final_image = bg_image.convert("RGB")
+                print(f"[DEBUG] Final Image Info (with background):")
+                print(f"- Size: {final_image.size}")
+                print(f"- Mode: {final_image.mode}")
+
+                # 检查最终图像的左上角像素
+                top_left_pixel = final_image.getpixel((0, 0))
+                print(f"[DEBUG] Top-left Pixel Color (RGB): {top_left_pixel} (Expected: {bg_color})")
+
+                # 保存用户文件
+                final_image.save(user_file_name)
+                print(f"[INFO] User image saved as {user_file_name}")
+
+                # 生成 Eink 图像
+                eink_image = final_image.rotate(-90, expand=True).transpose(Image.FLIP_TOP_BOTTOM)
+                eink_image.save(eink_file_name)
+                print(f"[INFO] Eink image saved as {eink_file_name}")
+
+                print("[INFO] Weather images updated successfully.")
             else:
-                print("Weather images are up to date.")
+                print("[INFO] Weather images are up to date.")
         except Exception as e:
-            print("Error refreshing weather images:", str(e))
+            print(f"[ERROR] Error refreshing weather images: {str(e)}")
 
         # 等待 15 分钟
+        print("[INFO] Sleeping for 15 minutes before the next refresh...")
         time.sleep(FILETOOOLD_SEC)
 
 # 获取本地 IP 地址
