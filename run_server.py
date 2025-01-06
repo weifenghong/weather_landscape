@@ -66,6 +66,11 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
             file_name = WEATHER.TmpFilePath(path[1:])
             self.do_GET_sendfile(file_name, "image/bmp")
             return
+
+         # 处理 NoSleep.min.js 的请求
+        if path.startswith('/NoSleep.min.js'):
+            self.do_GET_sendfile('NoSleep.min.js', 'application/javascript')
+            return
     
         # 如果路径不被识别，则返回 403 错误
         print("Path not accessible:", path)
@@ -94,6 +99,8 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
                         width: 100vw;
                         overflow: hidden;
                         background-color: rgb(190, 200, 207);
+                        user-select: none;
+                        pointer-events:none;
                     }}
                     img {{
                         width: 100%;
@@ -104,14 +111,17 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
             </head>
             <body>
                 <img id="weatherImage" src="{user_file}?timestamp={timestamp}" alt="Weather">
+                <script src="./NoSleep.min.js"></script>
                 <script>
-                    let wakeLock = null;
+                    var noSleep = new NoSleep();
+                    var wakeLock = null;
     
                     async function requestWakeLock() {{
                         if ('wakeLock' in navigator) {{
                             try {{
                                 wakeLock = await navigator.wakeLock.request('screen');
                                 console.log("Wake lock acquired");
+                                noSleep.enable();
     
                                 wakeLock.addEventListener('release', () => {{
                                     console.log("Wake lock released");
@@ -129,6 +139,8 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
                     requestWakeLock();
     
                     function releaseWakeLock() {{
+                        noSleep.disable();
+
                         if (wakeLock !== null) {{
                             wakeLock.release().then(() => {{
                                 console.log("Wake lock manually released");
@@ -138,6 +150,8 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
                     }}
     
                     function keepScreenActiveFallback() {{
+                        noSleep.enable();
+
                         const video = document.createElement('video');
                         video.src = 'data:video/mp4,';
                         video.loop = true;
