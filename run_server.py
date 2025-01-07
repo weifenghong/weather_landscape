@@ -168,6 +168,8 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
                     updateImage();
     
                     function toggleFullScreen() {{
+                        noSleep.enable();
+
                         var element = document.documentElement;
     
                         // iOS-specific full screen handling
