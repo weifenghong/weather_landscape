@@ -100,7 +100,6 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
                         overflow: hidden;
                         background-color: rgb(190, 200, 207);
                         user-select: none;
-                        pointer-events:none;
                     }}
                     img {{
                         width: 100%;
