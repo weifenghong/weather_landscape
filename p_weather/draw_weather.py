@@ -95,8 +95,8 @@ class DrawWeather():
         self.sprite.Draw("house", xpos, 0, oldy)
         
         # 绘制 bike
-        if self.is_bike_friendly(owm):
-            self.sprite.Draw("bike", xpos, 5, oldy - 22) 
+        # if self.is_bike_friendly(owm):
+        #     self.sprite.Draw("bike", xpos, 5, oldy - 22)
 
         # 其他绘制内容
         self.sprite.DrawInt(oldtemp, xpos + 8, oldy + 10)

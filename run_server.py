@@ -222,8 +222,17 @@ def periodic_refresh():
     while True:
         try:
             print("[INFO] Checking if weather images need to be updated...")
-            user_file_name = WEATHER.TmpFilePath(USERFILENAME)
-            eink_file_name = WEATHER.TmpFilePath(EINKFILENAME)
+            # user_file_name = WEATHER.TmpFilePath(USERFILENAME)
+            # eink_file_name = WEATHER.TmpFilePath(EINKFILENAME)
+            BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+            user_file_name = os.path.join(
+                BASE_DIR, WEATHER.TmpFilePath(USERFILENAME))
+            eink_file_name = os.path.join(
+                BASE_DIR, WEATHER.TmpFilePath(EINKFILENAME))
+
+            # 打印路径，排除路径异常
+            print(f"[DEBUG] User file path: {user_file_name}")
+            print(f"[DEBUG] Eink file path: {eink_file_name}")
 
             # 检查文件是否过期
             if not os.path.isfile(user_file_name) or not os.path.isfile(eink_file_name) or \
@@ -312,8 +321,15 @@ def get_my_ips():
 httpd = HTTPServer((SERV_IPADDR, SERV_PORT), WeatherLandscapeServer)
 
 # 启动后台线程定时刷新图片
+# refresh_thread = threading.Thread(target=periodic_refresh, daemon=True)
+# refresh_thread.start()
+
+print("[DEBUG] Attempting to start refresh thread...")
 refresh_thread = threading.Thread(target=periodic_refresh, daemon=True)
 refresh_thread.start()
+print("[DEBUG] Refresh thread started!")
+
+
 
 # 打印服务地址
 for ip in get_my_ips():
